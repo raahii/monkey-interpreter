@@ -6,13 +6,6 @@ import (
 	"github.com/raahii/monkey/token"
 )
 
-func New(input string) *Lexer {
-	l := &Lexer{input: input}
-	l.readChar()
-
-	return l
-}
-
 func TestNextToken(t *testing.T) {
 	// input := `=+(){},;`
 	input := `let five = 5;
