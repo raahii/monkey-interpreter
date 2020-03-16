@@ -47,3 +47,24 @@ const (
 	ELSE     = "ELSE"
 	RETURN   = "RETURN"
 )
+
+func LookupIdent(literal string) TokenType {
+	switch literal {
+	case "fn":
+		return FUNCTION
+	case "let":
+		return LET
+	case "true":
+		return TRUE
+	case "false":
+		return FALSE
+	case "if":
+		return IF
+	case "else":
+		return ELSE
+	case "return":
+		return RETURN
+	default:
+		return IDENT
+	}
+}
