@@ -3,8 +3,18 @@ package lexer
 import (
 	"testing"
 
+	"github.com/k0kubun/pp"
 	"github.com/raahii/monkey/token"
 )
+
+func New(input string) *Lexer {
+	l := &Lexer{input: input}
+	l.readChar()
+
+	pp.Println(l)
+
+	return l
+}
 
 func TestNextToken(t *testing.T) {
 	input := `=+(){},;`
@@ -30,11 +40,13 @@ func TestNextToken(t *testing.T) {
 		tok := l.NextToken()
 
 		if tok.Type != tt.expectedType {
-			t.Fatalf("invalid type")
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
 		}
 
 		if tok.Literal != tt.expectedLiteral {
-			t.Fatalf("invalid literal")
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
 		}
 	}
 }
