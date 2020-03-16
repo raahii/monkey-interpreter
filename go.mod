@@ -1,4 +1,4 @@
-module github.com/raahii/monkey
+module monkey
 
 go 1.13
 

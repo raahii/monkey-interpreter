@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"github.com/raahii/monkey/token"
+	"monkey/token"
 )
 
 type Lexer struct {
