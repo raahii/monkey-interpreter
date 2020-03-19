@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+var enableTracing = false
+
 const (
 	_ int = iota
 	LOWEST
@@ -28,6 +30,7 @@ var precedences = map[token.TokenType]int{
 	token.MINUS:    SUM,
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
+	token.LPAREN:   CALL,
 }
 
 type (
@@ -72,6 +75,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
 
 	return p
 }
@@ -212,7 +216,8 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 
 // expression parsers
 func (p *Parser) parseExpression(precedence int) ast.Expression {
-	// defer untrace(trace("parseExpression"))
+	defer untrace(trace("parseExpression"))
+
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
 		p.noPrefixParserFnError(p.curToken.Type)
@@ -247,12 +252,14 @@ func (p *Parser) parseGroupExpression() ast.Expression {
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
-	// defer untrace(trace("parseIdentifier"))
+	defer untrace(trace("parseIdentifier"))
+
 	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
-	// defer untrace(trace("parseIntegerLiteral"))
+	defer untrace(trace("parseIntegerLiteral"))
+
 	lit := &ast.IntegerLiteral{Token: p.curToken}
 
 	v, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
@@ -266,14 +273,16 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 }
 
 func (p *Parser) parseBoolean() ast.Expression {
-	// defer untrace(trace("parseBoolean"))
+	defer untrace(trace("parseBoolean"))
+
 	return &ast.Boolean{Token: p.curToken, Value: p.curTokenIs(token.TRUE)}
 }
 
 func (p *Parser) parsePrefixExpression() ast.Expression {
+	defer untrace(trace("parsePrefixExpression"))
+
 	// !<expression>
 	// -<expression>
-	// defer untrace(trace("parsePrefixExpression"))
 	pe := &ast.PrefixExpression{Token: p.curToken, Operator: p.curToken.Literal}
 
 	p.nextToken()
@@ -284,7 +293,8 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 }
 
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
-	// defer untrace(trace("parseInfixExpression"))
+	defer untrace(trace("parseInfixExpression"))
+
 	ie := &ast.InfixExpression{
 		Token:    p.curToken,
 		Operator: p.curToken.Literal,
@@ -300,7 +310,8 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {
-	// defer untrace(trace("parseBlockStatement"))
+	defer untrace(trace("parseBlockStatement"))
+
 	block := &ast.BlockStatement{Token: p.curToken}
 	block.Statements = []ast.Statement{}
 
@@ -317,7 +328,8 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 }
 
 func (p *Parser) parseIfExpression() ast.Expression {
-	// defer untrace(trace("parseIfExpression"))
+	defer untrace(trace("parseIfExpression"))
+
 	// if (<condition>) { <consequence> } else { <alternative> }
 	exp := &ast.IfExpression{Token: p.curToken}
 	if !p.expectPeek(token.LPAREN) {
@@ -383,6 +395,8 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 }
 
 func (p *Parser) parseFunctionLiteral() ast.Expression {
+	defer untrace(trace("parseFunctionLiteral"))
+
 	// fn(<parameters>) { <block statement> )
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 
@@ -399,4 +413,41 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit.Body = p.parseBlockStatement()
 
 	return lit
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	arguments := []ast.Expression{}
+
+	p.nextToken()
+	if p.curTokenIs(token.RPAREN) {
+		return arguments
+	}
+
+	arguments = append(arguments, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		arguments = append(arguments, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return []ast.Expression{}
+	}
+
+	return arguments
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	defer untrace(trace("parseCallExpression"))
+
+	// <identifier>(ident, ...)
+	exp := &ast.CallExpression{
+		Token:    p.curToken,
+		Function: function,
+	}
+
+	exp.Arguments = p.parseCallArguments()
+
+	return exp
 }
