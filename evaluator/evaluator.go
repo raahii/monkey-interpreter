@@ -1,4 +1,4 @@
-package evalator
+package evaluator
 
 import (
 	"fmt"
