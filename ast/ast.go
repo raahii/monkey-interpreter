@@ -214,7 +214,7 @@ func (ie *IfExpression) String() string {
 	out.WriteString(ie.Consequence.String())
 
 	if ie.Alternative != nil {
-		out.WriteString("else ")
+		out.WriteString(" else ")
 		out.WriteString(ie.Alternative.String())
 	}
 
@@ -243,7 +243,9 @@ func (fl *FunctionLiteral) String() string {
 	}
 	out.WriteString(") ")
 
+	out.WriteString("{ ")
 	out.WriteString(fl.Body.String())
+	out.WriteString(" }")
 
 	return out.String()
 }
