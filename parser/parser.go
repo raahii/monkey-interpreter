@@ -64,6 +64,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 	p.registerPrefix(token.LPAREN, p.parseGroupExpression)
+	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 	p.registerPrefix(token.IF, p.parseIfExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 
@@ -283,6 +284,15 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
 }
 
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	defer untrace(trace("parseStringLiteral"))
+
+	lit := &ast.ArrayLiteral{Token: p.curToken}
+	lit.Elements = p.parseExpressionList(token.RBRACKET)
+
+	return lit
+}
+
 func (p *Parser) parseBoolean() ast.Expression {
 	defer untrace(trace("parseBoolean"))
 
@@ -426,27 +436,27 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	return lit
 }
 
-func (p *Parser) parseCallArguments() []ast.Expression {
-	arguments := []ast.Expression{}
+func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
+	list := []ast.Expression{}
 
-	p.nextToken()
-	if p.curTokenIs(token.RPAREN) {
-		return arguments
+	if p.peekTokenIs(end) {
+		p.nextToken()
+		return list
 	}
 
-	arguments = append(arguments, p.parseExpression(LOWEST))
-
+	p.nextToken()
+	list = append(list, p.parseExpression(LOWEST))
 	for p.peekTokenIs(token.COMMA) {
 		p.nextToken()
 		p.nextToken()
-		arguments = append(arguments, p.parseExpression(LOWEST))
+		list = append(list, p.parseExpression(LOWEST))
 	}
 
-	if !p.expectPeek(token.RPAREN) {
-		return []ast.Expression{}
+	if !p.expectPeek(end) {
+		return nil
 	}
 
-	return arguments
+	return list
 }
 
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
@@ -458,7 +468,7 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 		Function: function,
 	}
 
-	exp.Arguments = p.parseCallArguments()
+	exp.Arguments = p.parseExpressionList(token.RPAREN)
 
 	return exp
 }
