@@ -78,6 +78,22 @@ func TestEvalBooleanExpression(t *testing.T) {
 	}
 }
 
+// String
+func TestEvalStringExpression(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`"foobar"`, "foobar"},
+		{`"Hello, World!"`, "Hello, World!"},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		testStringObject(t, evaluated, tt.expected)
+	}
+}
+
 // BANG operator
 func TestBangOperator(t *testing.T) {
 	tests := []struct {
@@ -315,6 +331,21 @@ func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
 
 	if result.Value != expected {
 		t.Errorf("object has wrong value,. got=%t, want=%t", result.Value, expected)
+		return false
+	}
+
+	return true
+}
+
+func testStringObject(t *testing.T, obj object.Object, expected string) bool {
+	result, ok := obj.(*object.String)
+	if !ok {
+		t.Errorf("object is not STring. got=%T (%+v)", obj, obj)
+		return false
+	}
+
+	if result.Value != expected {
+		t.Errorf("object has wrong value,. got=%q, want=%q", result.Value, expected)
 		return false
 	}
 

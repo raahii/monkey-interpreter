@@ -190,6 +190,31 @@ func TestBooleanExpression(t *testing.T) {
 	}
 }
 
+// string expression
+func TestStringLiteralExpression(t *testing.T) {
+	input := `"Hello, World!";`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program has not enough statements. got=%d",
+			len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	if !testLiteralExpression(t, stmt.Expression, "Hello, World!") {
+		return
+	}
+}
+
 // prefix expression
 func TestParsingPrefixExpressions(t *testing.T) {
 	prefixTests := []struct {
@@ -724,7 +749,12 @@ func testLiteralExpression(
 	expected interface{}) bool {
 	switch v := expected.(type) {
 	case string:
-		return testIdentifier(t, exp, v)
+		switch exp.(type) {
+		case *ast.Identifier:
+			return testIdentifier(t, exp, v)
+		case *ast.StringLiteral:
+			return testStringLiteral(t, exp, v)
+		}
 	case int:
 		return testIntegerLiteral(t, exp, int64(v))
 	case int64:
@@ -791,6 +821,26 @@ func testBooleanLiteral(t *testing.T, exp ast.Expression, value bool) bool {
 
 	if boolExp.TokenLiteral() != fmt.Sprintf("%t", value) {
 		t.Errorf("boolExp.TokenLiteral not %t. got=%s", value, boolExp.TokenLiteral())
+	}
+
+	return true
+}
+
+func testStringLiteral(t *testing.T, exp ast.Expression, value string) bool {
+	sl, ok := exp.(*ast.StringLiteral)
+	if !ok {
+		t.Errorf("exp not *ast.StringLiteral. got=%T", exp)
+		return false
+	}
+
+	if sl.Value != value {
+		t.Errorf("sl.Value not %q. got=%q", value, sl.Value)
+		return false
+	}
+
+	if sl.TokenLiteral() != value {
+		t.Errorf("sl.TokenLiteral not %q. got=%q", value, sl.TokenLiteral())
+		return false
 	}
 
 	return true

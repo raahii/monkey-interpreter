@@ -18,6 +18,7 @@ type Object interface {
 const (
 	INTEGER_OBJ   = "INTEGER"
 	BOOLEAN_OBJ   = "BOOLEAN"
+	STRING_OBJ    = "STRING"
 	FUNCITION_OBJ = "FUNCTION"
 
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
@@ -41,6 +42,14 @@ type Boolean struct {
 
 func (b *Boolean) Type() ObjectType { return BOOLEAN_OBJ }
 func (b *Boolean) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
+
+// String
+type String struct {
+	Value string
+}
+
+func (b *String) Type() ObjectType { return STRING_OBJ }
+func (b *String) Inspect() string  { return fmt.Sprintf(`"%s"`, b.Value) }
 
 // Function
 type Function struct {
