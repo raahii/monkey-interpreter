@@ -34,6 +34,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return &object.Array{Elements: elements}
+	case *ast.HashLiteral:
+		return evalHashLiteral(node, env)
 	case *ast.IndexExpression:
 		left := Eval(node.Left, env)
 		if isError(left) {
@@ -303,6 +305,31 @@ func evalArrayIndexExpression(left object.Object, index object.Object) object.Ob
 	}
 
 	return elems[idx]
+}
+
+func evalHashLiteral(node *ast.HashLiteral, env *object.Environment) object.Object {
+	pairs := make(map[object.HashKey]object.HashPair, len(node.Pairs))
+
+	for k, v := range node.Pairs {
+		key := Eval(k, env)
+		if isError(key) {
+			return key
+		}
+
+		hashkey, ok := key.(object.Hashable)
+		if !ok {
+			return newError("unsuable as hash key: %s", key.Type())
+		}
+
+		value := Eval(v, env)
+		if isError(value) {
+			return value
+		}
+
+		pairs[hashkey.HashKey()] = object.HashPair{Key: key, Value: value}
+	}
+
+	return &object.Hash{Pairs: pairs}
 }
 
 func extendFunctionEnv(
