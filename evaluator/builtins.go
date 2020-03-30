@@ -1,8 +1,22 @@
 package evaluator
 
-import "monkey/object"
+import (
+	"fmt"
+	"monkey/object"
+	"strings"
+)
 
 var builtins = map[string]*object.Builtin{
+	"puts": &object.Builtin{
+		Fn: func(args ...object.Object) object.Object {
+			_args := make([]string, len(args))
+			for i, arg := range args {
+				_args[i] = arg.Inspect()
+			}
+			fmt.Println(strings.Join(_args, " "))
+			return NULL
+		},
+	},
 	"len": &object.Builtin{
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
